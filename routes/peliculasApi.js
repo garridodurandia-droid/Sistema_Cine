@@ -10,3 +10,4 @@ router.put('/:id', PeliculaController.actualizar);
 router.delete('/:id', PeliculaController.eliminar);
 
 module.exports = router;
+
