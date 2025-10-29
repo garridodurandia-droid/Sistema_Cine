@@ -194,10 +194,15 @@ class reservasModels {
   rango(data) {
     return new Promise(async (resolve, reject) => {
       const { desde, hasta } = data
+      const inicio = new Date(desde)
+      const fin = new Date(hasta)
+
+      console.log(inicio)
+      console.log(fin)
 
       const reservas = await new Promise((resolve, reject) => {
-        const query = 'SELECT r.id AS id_reserva, r.id_cliente, c.nombre AS cliente, r.id_funcion, r.cantidad AS asientos, r.total, r.fechaReserva, r.estado, p.id, p.titulo, f.fecha, f.hora FROM reservas r INNER JOIN clientes c ON c.id = r.id_cliente INNER JOIN funciones f ON f.id = r.id_funcion INNER JOIN peliculas p ON p.id = f.pelicula_id AND f.fecha BETWEEN ? AND ?; '
-        db.query(query, [desde, hasta], function (error, results, fields) {
+        const query = 'SELECT r.id AS id_reserva, r.id_cliente, c.nombre AS cliente, r.id_funcion, r.cantidad AS asientos, r.total, r.fechaReserva, r.estado, p.id, p.titulo, f.fecha, f.hora FROM reservas r INNER JOIN clientes c ON c.id = r.id_cliente INNER JOIN funciones f ON f.id = r.id_funcion INNER JOIN peliculas p ON p.id = f.pelicula_id AND r.fechaReserva BETWEEN ? AND ?; '
+        db.query(query, [inicio, fin], function (error, results, fields) {
           if (error) return reject({ status: 400, mensaje: error });
           if (results.length === 0) {
             return resolve(results)
