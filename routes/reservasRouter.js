@@ -188,6 +188,7 @@ router.post('/rango', function (req, res, next) {
           asientos: res.locals.asientos_vendiodos,
           total: res.locals.totalIngresos
         })
+
     })
     .catch((err) => {
       res.send(err);
