@@ -180,125 +180,125 @@
           <div class="card-header bg-info text-white">
             <h5 class="mb-0"><i class="fas fa-search me-2"></i>Buscar Reservas</h5>
           </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-6 mb-2">
-                <label class="form-label">Desde</label>
-                <input type="date" name="desde" class="form-control" id="fechaInicio">
+          <form action="/reservas/rango" method="post">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6 mb-2">
+                  <label class="form-label">Desde</label>
+                  <input type="date" name="desde" class="form-control" id="fechaInicio">
+                </div>
+                <div class="col-md-6 mb-2">
+                  <label class="form-label">Hasta</label>
+                  <input type="date" name="hasta" class="form-control" id="fechaFin">
+                </div>
               </div>
-              <div class="col-md-6 mb-2">
-                <label class="form-label">Hasta</label>
-                <input type="date" name="Hasta" class="form-control" id="fechaFin">
-              </div>
-            </div>
-            <form action="/reservas/rango" method="post">
               <button class="btn btn-outline-info w-100" type="submit">
                 <i class="fas fa-filter me-2"></i>Filtrar Reservas
               </button>
-            </form>
-            <form action="/reservas" method="get">
-              <button class="btn btn-outline-secondary w-100 mt-2" type="submit">
-                <i class="fas fa-sync-alt me-2"></i>Mostrar Todas
-              </button>
-            </form>
-          </div>
+          </form>
+          <form action="/reservas" method="get">
+            <button class="btn btn-outline-secondary w-100 mt-2" type="submit">
+              <i class="fas fa-sync-alt me-2"></i>Mostrar Todas
+            </button>
+          </form>
         </div>
       </div>
+    </div>
 
-      <!-- Lista de Reservas -->
-      <div class="col-lg-6">
-        <div class="card reservation-card">
-          <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-            <h4 class="mb-0"><i class="fas fa-list me-2"></i>Lista de Reservas</h4>
-            <div>
-              <span class="badge bg-light text-dark" id="contadorReservas">
-                <%= data.length %> reservas
-              </span>
-            </div>
+    <!-- Lista de Reservas -->
+    <div class="col-lg-6">
+      <div class="card reservation-card">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+          <h4 class="mb-0"><i class="fas fa-list me-2"></i>Lista de Reservas</h4>
+          <div>
+            <span class="badge bg-light text-dark" id="contadorReservas">
+              <%= data.length %> reservas
+            </span>
           </div>
-          <div class="card-body">
-            <div class="loading-spinner text-center mb-3" id="loadingReservas">
-              <div class="spinner-border text-danger" role="status">
-                <span class="visually-hidden">Cargando...</span>
-              </div>
-              <p class="mt-2">Cargando reservas...</p>
+        </div>
+        <div class="card-body">
+          <div class="loading-spinner text-center mb-3" id="loadingReservas">
+            <div class="spinner-border text-danger" role="status">
+              <span class="visually-hidden">Cargando...</span>
             </div>
-            <div id="listaReservas" class="row g-3">
-              <% if(data.length> 0 ) { %>
-                <% data.forEach(function(reserva){ const fechaReserva=new Date(reserva.fechaReserva); const ahora=new
-                  Date(); const esReciente=(ahora - fechaReserva) < (24 * 60 * 60 * 1000); %>
-                  <div class="card reservation-card <%= esReciente ? 'border-success' : '' %>">
-                    <div class="card-body">
-                      <div class="row align-items-center">
-                        <div class="col-md-8">
-                          <div class="d-flex justify-content-between align-items-start">
-                            <h5 class="card-title text-danger">Reserva #<%= reserva.id_reserva %>
-                            </h5>
-                            <span class="badge <%= esReciente ? 'bg-success' : 'bg-secondary' %> status-badge">
-                              <%= esReciente ? 'NUEVA' : 'CONFIRMADA' %>
-                            </span>
-                          </div>
+            <p class="mt-2">Cargando reservas...</p>
+          </div>
+          <div id="listaReservas" class="row g-3">
+            <% if(data.length> 0 ) { %>
+              <% data.forEach(function(reserva){ const fechaReserva=new Date(reserva.fechaReserva); const ahora=new
+                Date(); const esReciente=(ahora - fechaReserva) < (24 * 60 * 60 * 1000); %>
+                <div class="card reservation-card <%= esReciente ? 'border-success' : '' %>">
+                  <div class="card-body">
+                    <div class="row align-items-center">
+                      <div class="col-md-8">
+                        <div class="d-flex justify-content-between align-items-start">
+                          <h5 class="card-title text-danger">Reserva #<%= reserva.id_reserva %>
+                          </h5>
+                          <span class="badge <%= esReciente ? 'bg-success' : 'bg-secondary' %> status-badge">
+                            <%= esReciente ? 'NUEVA' : 'CONFIRMADA' %>
+                          </span>
+                        </div>
 
-                          <p class="card-text mb-1">
-                            <i class="fas fa-user me-1 text-muted"></i>
-                            <strong>Cliente:</strong>
-                            <%= reserva.cliente || 'Cliente no encontrado' %>
-                          </p>
+                        <p class="card-text mb-1">
+                          <i class="fas fa-user me-1 text-muted"></i>
+                          <strong>Cliente:</strong>
+                          <%= reserva.cliente || 'Cliente no encontrado' %>
+                        </p>
 
-                          <p class="card-text mb-1">
-                            <i class="fas fa-film me-1 text-muted"></i>
-                            <strong>Película:</strong>
-                            <%= reserva.titulo || 'Película no disponible' %>
-                          </p>
+                        <p class="card-text mb-1">
+                          <i class="fas fa-film me-1 text-muted"></i>
+                          <strong>Película:</strong>
+                          <%= reserva.titulo || 'Película no disponible' %>
+                        </p>
 
-                          <p class="card-text mb-1">
-                            <i class="fas fa-calendar me-1 text-muted"></i>
-                            <small class="text-muted">
-                              Función: <%= reserva.fecha ? new Date(reserva.fecha).toLocaleDateString() : 'N/A' %>
-                                <%= reserva.hora || '' %>
-                            </small>
-                          </p>
-
-                          <p class="card-text mb-1">
-                            <i class="fas fa-chair me-1 text-muted"></i>
-                            <strong>Asientos:</strong>
-                            <%= reserva.asientos %> |
-                              <strong>Total:</strong> $<%= reserva.total %>
-                          </p>
-
+                        <p class="card-text mb-1">
+                          <i class="fas fa-calendar me-1 text-muted"></i>
                           <small class="text-muted">
-                            Reserva realizada: <%= fechaReserva.toLocaleString() %>
+                            Función: <%= reserva.fecha ? new Date(reserva.fecha).toLocaleDateString() : 'N/A' %>
+                              <%= reserva.hora || '' %>
                           </small>
-                        </div>
-                        <div class="col-md-4 text-end">
-                          <button type="button" onclick="elimnarNombre('<%= reserva.id_reserva %>')" name="Eliminar"
-                            id="eliminar" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal"
-                            data-bs-target="#eliminarModal">
-                            <i class="fas fa-trash me-1"></i>Cancelar
-                          </button>
-                          <br>
-                          <small class="text-muted mt-2 d-block">
-                            Estado: <span class="text-success">
-                              <%= reserva.estado || 'confirmada' %>
-                            </span>
-                          </small>
-                        </div>
+                        </p>
+
+                        <p class="card-text mb-1">
+                          <i class="fas fa-chair me-1 text-muted"></i>
+                          <strong>Asientos:</strong>
+                          <%= reserva.asientos %> |
+                            <strong>Total:</strong> $<%= reserva.total %>
+                        </p>
+
+                        <small class="text-muted">
+                          Reserva realizada: <%= fechaReserva.toLocaleString() %>
+                        </small>
+                      </div>
+                      <div class="col-md-4 text-end">
+                        <button type="button" onclick="elimnarNombre('<%= reserva.id_reserva %>')" name="Eliminar"
+                          id="eliminar" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal"
+                          data-bs-target="#eliminarModal">
+                          <i class="fas fa-trash me-1"></i>Cancelar
+                        </button>
+                        <br>
+                        <small class="text-muted mt-2 d-block">
+                          Estado: <span class="text-success">
+                            <%= reserva.estado || 'confirmada' %>
+                          </span>
+                        </small>
                       </div>
                     </div>
                   </div>
-                  <% })%>
-                    <% } else { %>
-                      <div class="col-12 text-center">
-                        <div class="alert alert-info">
-                          <i class="fas fa-info-circle me-2"></i>No hay reservas registradas
-                        </div>
+                </div>
+                <% })%>
+                  <% } else { %>
+                    <div class="col-12 text-center">
+                      <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>No hay reservas registradas
                       </div>
-                      <% } %>
-            </div>
+                    </div>
+                    <% } %>
           </div>
         </div>
       </div>
     </div>
+  </div>
   </div>
 
   <div class="modal fade" id="eliminarModal" tabindex="-1" aria-labelledby="eliminarModalLabel" aria-hidden="true">
