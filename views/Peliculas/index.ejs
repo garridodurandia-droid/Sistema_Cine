@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Películas</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    .movie-card {
+      transition: transform 0.3s ease;
+      border: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .movie-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .loading-spinner {
+      display: none;
+    }
+
+    .alert-toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1050;
+      min-width: 300px;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/inicio"><i class="fas fa-film me-2"></i>CineSystem</a>
+      <div class="navbar-nav">
+        <% if(rol=='admin' || rol=='gerente' ) {%>
+          <a class="nav-link" href="/users/registro"><i class="fas fa-user me-1"></i>Agregar usuario</a>
+          <% } %>
+            <a class="nav-link active" href="/peliculas"><i class="fas fa-movie me-1"></i>Películas</a>
+            <a class="nav-link" href="/salas"><i class="fas fa-theater-masks me-1"></i>Salas</a>
+            <a class="nav-link" href="/funciones"><i class="fas fa-calendar-alt me-1"></i>Funciones</a>
+            <a class="nav-link" href="/clientes"><i class="fas fa-users me-1"></i>Clientes</a>
+            <a class="nav-link" href="/reservas"><i class="fas fa-ticket-alt me-1"></i>Reservas</a>
+            <a class="nav-link" href="/users/logout"><i class="fas fa-sign-out-alt me-1"></i>Cerrar Sesión</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-4">
+    <div class="row">
+      <div class="col-12">
+        <h1 class="display-5 fw-bold text-primary"><i class="fas fa-film me-2"></i>Gestión de Películas</h1>
+        <p class="lead">Administra el catálogo completo de películas</p>
+      </div>
+    </div>
+
+    <div class="row">
+      <!-- Formulario -->
+      <% if(rol=='admin' || rol=='gerente' ) { %>
+        <div class="col-lg-6">
+          <div class="card movie-card">
+            <div class="card-header bg-primary text-white">
+              <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Agregar / Editar Película</h4>
+            </div>
+            <div class="card-body">
+              <form id="formPelicula" action="/peliculas/crear" method="post">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Título *</label>
+                    <input type="text" name="titulo" class="form-control" id="titulo" required>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Director *</label>
+                    <input type="text" name="director" class="form-control" id="director" required>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Género *</label>
+                    <input type="text" name="genero" class="form-control" id="genero" required>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Duración (min) *</label>
+                    <input type="number" name="duracion" class="form-control" id="duracion" required>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Clasificación</label>
+                  <select class="form-select" name="clasificacion" id="clasificacion">
+                    <option value="A">A - Todo público</option>
+                    <option value="B">B - +12 años</option>
+                    <option value="C">C - +15 años</option>
+                    <option value="D">D - +18 años</option>
+                  </select>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Sinopsis</label>
+                  <textarea class="form-control" name="sinopsis" id="sinopsis" rows="3"
+                    placeholder="Breve descripción de la película..."></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100" id="btnSubmit">
+                  <i class="fas fa-save me-2"></i>Guardar Película
+                </button>
+              </form>
+              <div class="mt-3">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="limpiar()">
+                  <i class="fas fa-eraser me-2"></i>Limpiar formulario
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <% } %>
+
+          <!-- Lista de Películas -->
+          <div class="col-lg-6">
+            <div class="card movie-card">
+              <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-list me-2"></i>Lista de Películas</h4>
+                <div>
+                  <span class="badge bg-light text-dark" id="contadorPeliculas">
+                    <%= data.length %> películas
+                  </span>
+                </div>
+                <form action="/peliculas" method="get">
+                  <button type="submit" class="btn btn-primary">Mostrar todas <i
+                      class="fa-solid fa-rotate-right"></i></i></button>
+                </form>
+              </div>
+              <div class="card-body">
+                <form action="/peliculas/uno" method="post">
+                  <div class="card-body">
+                    <label class="form-label">Buscar por titulo</label>
+                    <div class="d-flex gap-2">
+                      <input type="text" name="pelicula_titulo" class="form-control" id="genero" required>
+                      <button type="submit" class="btn btn-primary"><i
+                          class="fa-solid fa-magnifying-glass"></i></button>
+                    </div>
+                  </div>
+                </form>
+                <div class="loading-spinner text-center mb-3" id="loadingPeliculas">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                  </div>
+                  <p class="mt-2">Cargando películas...</p>
+                </div>
+                <div id="listaPeliculas" class="row g-3">
+                  <% if(data.length> 0) { %>
+                    <% data.forEach(function(pelicula) { %>
+                      <div class="card movie-card">
+                        <div class="card-body">
+                          <div class="row align-items-center">
+                            <div class="col-md-8">
+                              <h5>Película #<%= pelicula.numero_secuencial %> - <%= pelicula.titulo %>
+                              </h5>
+                              <p class="card-text mb-1">
+                                <small class="text-muted">
+                                  ID <%= pelicula.id %>
+                                </small>
+                              </p>
+                              <p class="card-text mb-1">
+                                <small class="text-muted">
+                                  <i class="fas fa-user me-1"></i>
+                                  <%= pelicula.director %>
+                                </small>
+                              </p>
+                              <p class="card-text mb-1">
+                                <small class="text-muted">
+                                  <i class="fas fa-tag me-1"></i>
+                                  <%= pelicula.genero %> |
+                                    <i class="fas fa-clock me-1"></i>
+                                    <%= pelicula.duracion %> min
+                                </small>
+                              </p>
+                              <% if(pelicula.sinopsis) { %>
+                                <p class="card-text small text-muted">
+                                  <%= pelicula.sinopsis %>
+                                </p>
+                                <% } %>
+                                  <span class="badge bg-secondary">
+                                    <%= pelicula.clasificacion %>
+                                  </span>
+                            </div>
+                            <% if(rol=='admin' || rol=='gerente' ) { %>
+                              <div class="col-md-4 text-end">
+                                <button class="btn btn-outline-warning btn-sm me-1"
+                                  onclick="editarPelicula('<%= JSON.stringify(pelicula) %>')"><i
+                                    class="fas fa-edit me-1"></i>Editar
+                                </button>
+                                <button type="button"
+                                  onclick="elimnarNombre('<%= pelicula.id %>','<%= pelicula.titulo %>')" name="Eliminar"
+                                  id="eliminar" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal"
+                                  data-bs-target="#eliminarModal">
+                                  <i class="fas fa-trash me-1"></i>Eliminar
+                                </button>
+                              </div>
+                              <% } %>
+                          </div>
+                        </div>
+                      </div>
+                      <% }); %>
+                        <% } else { %>
+                          <div class="col-12 text-center">
+                            <div class="alert alert-info">
+                              <i class="fas fa-info-circle me-2"></i>No hay películas registradas
+                            </div>
+                          </div>
+                          <% }%>
+                </div>
+              </div>
+            </div>
+          </div>
+    </div>
+  </div>
+
+
+  <div class="modal fade" id="eliminarModal" tabindex="-1" aria-labelledby="eliminarModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="eliminarModalLabel">Eliminar pelicula</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          ¿Estás seguro de que deseas eliminar <label for=""></label> película <span id="nombre" class="fw-bold">Nombre
+          </span>?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <form action="peliculas/eliminar/" id="formEliminar" method="post">
+            <button type="submit" class="btn btn-danger">Confirmar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+
+
+    function editarPelicula(pelicula) {
+      const data = pelicula.replace(/&quot;/g, '"');
+      console.log(data);
+      pelicula = JSON.parse(pelicula);
+      document.getElementById('formPelicula').action = '/peliculas/editar/' + pelicula.id + '?_method=PUT';
+      document.getElementById('titulo').value = pelicula.titulo;
+      document.getElementById('director').value = pelicula.director;
+      document.getElementById('genero').value = pelicula.genero;
+      document.getElementById('duracion').value = pelicula.duracion;
+      document.getElementById('clasificacion').value = pelicula.clasificacion;
+      document.getElementById('sinopsis').value = pelicula.sinopsis;
+
+      const btnSubmit = document.getElementById('btnSubmit');
+      btnSubmit.innerHTML = '<i class="fas fa-edit me-2"></i>Actualizar Película';
+    }
+
+    const elimnarNombre = (id, nombre) => {
+      document.getElementById('nombre').innerText = nombre;
+      document.getElementById('formEliminar').action = `/peliculas/eliminar/${id}?_method=DELETE`;
+    }
+
+    const limpiar = () => {
+      document.getElementById('formPelicula').action = '/peliculas/crear';
+      document.getElementById('titulo').value = '';
+      document.getElementById('director').value = '';
+      document.getElementById('genero').value = '';
+      document.getElementById('duracion').value = '';
+      document.getElementById('clasificacion').value = '';
+      document.getElementById('sinopsis').value = '';
+
+      const btnSubmit = document.getElementById('btnSubmit');
+      btnSubmit.innerHTML = '<i class="fas fa-save me-2"></i>Guardar Película';
+    }
+  </script>
+</body>
+
+</html>

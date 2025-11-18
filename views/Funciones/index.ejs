@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Funciones</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    .function-card {
+      transition: transform 0.3s ease;
+      border: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .function-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .loading-spinner {
+      display: none;
+    }
+
+    .alert-toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1050;
+      min-width: 300px;
+    }
+
+    .status-badge {
+      font-size: 0.8em;
+    }
+
+    .custom-select option {
+      padding: 8px;
+      font-size: 14px;
+    }
+
+    .custom-select option::after {
+      content: attr(data-subtitle);
+      display: block;
+      font-size: 12px;
+      color: #666;
+      font-style: italic;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/inicio"><i class="fas fa-film me-2"></i>CineSystem</a>
+      <div class="navbar-nav">
+        <% if(rol=='admin' || rol=='gerente' ) {%>
+          <a class="nav-link" href="/users/registro"><i class="fas fa-user me-1"></i>Agregar usuario</a>
+          <% } %>
+            <a class="nav-link" href="/peliculas"><i class="fas fa-movie me-1"></i>Películas</a>
+            <a class="nav-link" href="/salas"><i class="fas fa-theater-masks me-1"></i>Salas</a>
+            <a class="nav-link active" href="/funciones"><i class="fas fa-calendar-alt me-1"></i>Funciones</a>
+            <a class="nav-link" href="/clientes"><i class="fas fa-users me-1"></i>Clientes</a>
+            <a class="nav-link" href="/reservas"><i class="fas fa-ticket-alt me-1"></i>Reservas</a>
+            <a class="nav-link" href="/users/logout"><i class="fas fa-sign-out-alt me-1"></i>Cerrar Sesión</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-4">
+    <div class="row">
+      <div class="col-12">
+        <h1 class="display-5 fw-bold text-warning"><i class="fas fa-calendar-alt me-2"></i>Gestión de Funciones
+        </h1>
+        <p class="lead">Programa y gestiona las funciones de cine</p>
+      </div>
+    </div>
+
+    <!-- Estadísticas Rápidas -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="card bg-primary text-white">
+          <div class="card-body text-center">
+            <h4 id="totalFunciones">
+              <%= data.length || 0 %>
+            </h4>
+            <p class="mb-0">Total Funciones</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-success text-white">
+          <div class="card-body text-center">
+            <h4 id="funcionesHoy">
+              <%= funcionesHoy %>
+            </h4>
+            <p class="mb-0">Hoy</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-info text-white">
+          <div class="card-body text-center">
+            <h4 id="asientos_disponibles">
+              <%= asientos %>
+            </h4>
+            <p class="mb-0">Asientos Disp.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-secondary text-white">
+          <div class="card-body text-center">
+            <h4 id="ingresosTotales">$ <%= ingresos %>
+            </h4>
+            <p class="mb-0">Ingresos Totales</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <!-- Formulario -->
+
+      <% if(rol=='admin' || rol=='gerente' ) { %>
+
+        <div class="col-lg-6">
+          <div class="card function-card">
+            <div class="card-header bg-warning text-dark">
+              <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Programar Nueva Función</h4>
+            </div>
+
+            <div class="card-body">
+
+              <form id="formFuncion" action="/funciones/crear" method="POST">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Película ID *</label>
+                    <select class="form-select" name="pelicula_id" id="pelicula_id" placeholder="ID de la película"
+                      required>
+                      <option value="" disabled selected>Seleciona</option>
+                      <% if(peliculas.length> 0) { %>
+                        <% peliculas.forEach(function(peli) { %>
+                          <option value="<%= peli.id %>">
+                            <%= peli.titulo %>
+                          </option>
+                          <% }); %>
+                            <% }; %>
+                    </select>
+                    <div class="form-text">
+                      <small>Seleciona una película existente</small>
+                    </div>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Numero de sala *</label>
+                    <select class="form-select custom-select" name="sala_id" id="sala_id" placeholder="ID de la sala"
+                      required>
+                      <option value="" disabled selected>Seleciona</option>
+                      <% if(salas.length> 0) { %>
+                        <% salas.forEach(function(sala) { %>
+                          <option value="<%= sala.id %>" class="d-flex flex-col">
+                            #<%= sala.numero %> - Tipo: <%= sala.tipo %> - Capacidad <%= sala.capacidad %>
+                          </option>
+                          <% }); %>
+                            <% }; %>
+
+                    </select>
+                    <div class="form-text">
+                      <small>Usa una sala existente</small>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Fecha *</label>
+                    <input type="date" class="form-control" name="fecha" id="fecha" required>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Hora *</label>
+                    <input type="time" class="form-control" name="hora" id="hora" required>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Precio por Asiento ($) *</label>
+                  <input type="number" step="0.01" class="form-control" name="precio" id="precio" placeholder="0.00"
+                    required>
+                </div>
+
+                <div class="alert alert-info">
+                  <i class="fas fa-info-circle me-2"></i>
+                  <small>La capacidad de la sala se asignará automáticamente</small>
+                </div>
+
+                <button type="submit" class="btn btn-warning w-100" id="btnSubmit">
+                  <i class="fas fa-calendar-plus me-2"></i>Programar Función
+                </button>
+              </form>
+              <div class="mt-3">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="limpiar()">
+                  <i class="fas fa-eraser me-2"></i>Limpiar formulario
+                </button>
+              </div>
+            </div>
+          </div>
+          <% } %>
+
+            <!-- Búsqueda por Fecha -->
+            <div class="card function-card mt-4">
+              <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-search me-2"></i>Buscar por Fecha</h5>
+              </div>
+              <div class="card-body">
+                <form id="formRango" action="/funciones/rango" method="post">
+                  <div class="row">
+                    <div class="col-md-6 mb-2">
+                      <label class="form-label">Desde</label>
+                      <input type="date" name="desde" class="form-control" id="fechaInicio">
+                    </div>
+                    <div class="col-md-6 mb-2">
+                      <label class="form-label">Hasta</label>
+                      <input type="date" name="hasta" class="form-control" id="fechaFin">
+                    </div>
+                  </div>
+                  <button class="btn btn-outline-info w-100" onclick="buscarPorFecha()">
+                    <i class="fas fa-filter me-2"></i>Filtrar Funciones
+                  </button>
+                </form>
+              </div>
+            </div>
+        </div>
+
+
+
+        <!-- Lista de Funciones -->
+        <div class="col-lg-6">
+          <div class="card function-card">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+              <h4 class="mb-0"><i class="fas fa-list me-2"></i>Lista de Funciones</h4>
+              <div>
+                <span class="badge bg-light text-dark" id="contadorFunciones">
+                  <%= data.length %> funciones
+                </span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="loading-spinner text-center mb-3" id="loadingFunciones">
+                <div class="spinner-border text-warning" role="status">
+                  <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-2">Cargando funciones...</p>
+              </div>
+              <div id="listaFunciones" class="row g-3">
+                <% if(data.length> 0) { %>
+                  <% data.forEach(function(funcion) { const fechaFuncion=new Date(funcion.fecha); const ahora=new
+                    Date(); const esPasada=(fechaFuncion.toDateString()===ahora.toDateString() && funcion.hora <
+                    ahora.toTimeString().slice(0,5)); %>
+                    <div class="card function-card <%= esPasada ? 'border-secondary' : '' %>">
+                      <div class="card-body">
+                        <div class="row align-items-center">
+                          <div class="col-md-8">
+                            <div class="d-flex justify-content-between align-items-start">
+                              <h5 class="card-title text-warning">
+                                <%= funcion.titulo || 'Película no encontrada' %>
+                              </h5>
+                              <span class="badge <%= esPasada ? 'bg-secondary' : 'bg-success' %> status-badge">
+                                <%= esPasada ? 'PASADA' : 'ACTIVA' %>
+                              </span>
+                            </div>
+
+                            <p class="card-text mb-1">
+                              <i class="fas fa-theater-masks me-1 text-muted"></i>
+                              <small class="text-muted">Sala <%= funcion.sala || 'N/A' %> |
+                                  Capacidad: <%= funcion.capacidad || 'N/A' %></small>
+                            </p>
+
+                            <p class="card-text mb-1">
+                              <i class="fas fa-calendar me-1 text-muted"></i>
+                              <small class="text-muted">
+                                <%= fechaFuncion.toLocaleDateString() %> a las <%= funcion.hora %>
+                              </small>
+                            </p>
+
+                            <p class="card-text mb-1">
+                              <i class="fas fa-ticket-alt me-1 text-muted"></i>
+                              <small class="text-muted">
+                                $<%=funcion.precio %> por asiento |
+                                  <span
+                                    class="<%= funcion.asientos_disponibles < 10 ? 'text-danger' : 'text-success' %>">
+                                    <%=funcion.asientos_disponibles %> asientos disponibles
+                                  </span>
+                              </small>
+                            </p>
+
+                            <small class="text-muted">
+                              ID: <%= funcion.id %> | Creada: <%= new Date(funcion.fecha_creacion).toLocaleDateString()
+                                  %>
+                            </small>
+                          </div>
+                          <% if(rol=='admin' || rol=='gerente' ) { %>
+
+                            <div class="col-md-4 text-end">
+                              <button class="btn btn-outline-warning btn-sm me-1"
+                                onclick="editarFuncion('<%= JSON.stringify(funcion) %>')"><i
+                                  class="fas fa-edit me-1"></i>Editar
+                              </button>
+                              <button class="btn btn-outline-danger btn-sm mb-2"
+                                onclick="elimnarNombre('<%= funcion.id %>','<%= funcion.titulo %>','<%= funcion.sala %>','<%= funcion.hora %>')"
+                                name="Eliminar" id="eliminar" class="btn btn-outline-danger btn-sm"
+                                data-bs-toggle="modal" data-bs-target="#eliminarModal">
+                                <i class="fas fa-trash me-1"></i>Eliminar
+                              </button>
+                              <br>
+                              <small class="text-muted">
+                                <%= funcion.asientos_disponibles %>/<%= funcion.capacidad || 0 %> disp.
+                              </small>
+                            </div>
+                            <% } %>
+                        </div>
+                      </div>
+                    </div>
+                    <% }); %>
+                      <% } else { %>
+                        <div class="col-12 text-center">
+                          <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>No hay funciones programadas
+                          </div>
+                        </div>
+                        <% } %>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+  </div>
+
+
+  <div class="modal fade" id="eliminarModal" tabindex="-1" aria-labelledby="eliminarModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="eliminarModalLabel">Eliminar pelicula</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          ¿Estás seguro de que deseas eliminar la función <span id="nombre" class="fw-bold">Nombre
+          </span>?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <form action="funciones/eliminar/" id="formEliminar" method="post">
+            <button type="submit" class="btn btn-danger">Confirmar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+
+    function editarFuncion(funcion) {
+      funcion = JSON.parse(funcion);
+      document.getElementById('formFuncion').action = '/funciones/editar/' + funcion.id + '?_method=PUT';
+      document.getElementById('pelicula_id').value = funcion.pelicula_id;
+      document.getElementById('sala_id').value = funcion.sala_id;
+      document.getElementById('fecha').value = funcion.fecha.split('T')[0];
+      document.getElementById('hora').value = funcion.hora;
+      document.getElementById('precio').value = funcion.precio;
+
+      const btnSubmit = document.getElementById('btnSubmit');
+      btnSubmit.innerHTML = '<i class="fas fa-edit me-2"></i>Actualizar Función';
+    }
+
+    const elimnarNombre = (id, nombre, sala, hora) => {
+      const fecha = new Date(`2000-01-01T${hora}`);
+      const horaFormateada = fecha.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true
+      });
+      document.getElementById('nombre').innerText = nombre + ' En la sala ' + sala + ", en la hora " + horaFormateada;
+      document.getElementById('formEliminar').action = `/funciones/eliminar/${id}?_method=DELETE`
+    }
+
+    const limpiar = () => {
+      document.getElementById('formFuncion').action = '/funciones/crear';
+      document.getElementById('pelicula_id').value = '';
+      document.getElementById('sala_id').value = '';
+      document.getElementById('fecha').value = '';
+      document.getElementById('hora').value = '';
+      document.getElementById('precio').value = '';
+
+      const btnSubmit = document.getElementById('btnSubmit');
+      btnSubmit.innerHTML = '<i class="fas fa-calendar-plus me-2"></i>Programar Función';
+    }
+  </script>
+</body>
+
+</html>
